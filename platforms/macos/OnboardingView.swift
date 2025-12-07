@@ -5,8 +5,9 @@ import AppKit
 
 struct OnboardingView: View {
     @State private var currentStep: OnboardingStep = .welcome
-    @State private var permissionStatus: PermissionStatus = .unknown
-    @State private var isCheckingPermission = false
+    @State private var hasPermission = false
+    @State private var selectedMode: InputMode = .telex
+    @State private var permissionTimer: Timer?
 
     enum OnboardingStep {
         case welcome
@@ -15,106 +16,38 @@ struct OnboardingView: View {
         case done
     }
 
-    enum PermissionStatus {
-        case unknown
-        case notGranted
-        case granted
-        case needsRestart
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            // Progress indicator
-            ProgressIndicator(currentStep: currentStep)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
+            ProgressIndicator(step: stepIndex, total: 4)
+                .padding(.vertical, 16)
 
             Divider()
 
-            // Content
             Group {
                 switch currentStep {
                 case .welcome:
-                    WelcomeStep(onNext: { currentStep = .permission })
+                    WelcomeStepView(onNext: goToPermission)
                 case .permission:
-                    PermissionStep(
-                        status: $permissionStatus,
-                        isChecking: $isCheckingPermission,
-                        onNext: { currentStep = .setup },
+                    PermissionStepView(
+                        hasPermission: hasPermission,
                         onRestart: restartApp
                     )
-                    .onAppear {
-                        // Auto-skip if already granted
-                        if permissionStatus == .granted {
-                            currentStep = .setup
-                        }
-                    }
-                    .onChange(of: permissionStatus) { newStatus in
-                        if newStatus == .granted {
-                            currentStep = .setup
-                        }
-                    }
                 case .setup:
-                    SetupStep(onNext: { currentStep = .done })
+                    SetupStepView(selectedMode: $selectedMode, onNext: goToDone)
                 case .done:
-                    DoneStep(onFinish: finishOnboarding)
+                    DoneStepView(onFinish: finish)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 500, height: 400)
+        .frame(width: 500, height: 420)
         .onAppear {
-            checkPermission()
+            startPermissionCheck()
+        }
+        .onDisappear {
+            stopPermissionCheck()
         }
     }
-
-    private func checkPermission() {
-        isCheckingPermission = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            let trusted = AXIsProcessTrusted()
-            if trusted {
-                permissionStatus = .granted
-            } else {
-                permissionStatus = .notGranted
-            }
-            isCheckingPermission = false
-        }
-    }
-
-    private func skipToSetupIfGranted() {
-        // If already on permission step and granted, move to setup
-        if currentStep == .permission && permissionStatus == .granted {
-            currentStep = .setup
-        }
-    }
-
-    private func restartApp() {
-        // Mark that we need to continue onboarding after restart
-        UserDefaults.standard.set(false, forKey: SettingsKey.hasCompletedOnboarding)
-
-        // Get the app's path
-        let task = Process()
-        task.launchPath = "/bin/sh"
-        task.arguments = ["-c", "sleep 1 && open \"\(Bundle.main.bundlePath)\""]
-        try? task.run()
-
-        // Quit current instance
-        NSApp.terminate(nil)
-    }
-
-    private func finishOnboarding() {
-        UserDefaults.standard.set(true, forKey: SettingsKey.hasCompletedOnboarding)
-        NSApp.keyWindow?.close()
-
-        // Notify to start keyboard hook
-        NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
-    }
-}
-
-// MARK: - Progress Indicator
-
-struct ProgressIndicator: View {
-    let currentStep: OnboardingView.OnboardingStep
 
     private var stepIndex: Int {
         switch currentStep {
@@ -125,11 +58,67 @@ struct ProgressIndicator: View {
         }
     }
 
+    // MARK: - Navigation
+
+    private func goToPermission() {
+        if hasPermission {
+            currentStep = .setup
+        } else {
+            currentStep = .permission
+        }
+    }
+
+    private func goToDone() {
+        // Save selected mode BEFORE going to done
+        UserDefaults.standard.set(selectedMode.rawValue, forKey: SettingsKey.method)
+        currentStep = .done
+    }
+
+    private func finish() {
+        UserDefaults.standard.set(true, forKey: SettingsKey.hasCompletedOnboarding)
+        NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
+        NSApp.keyWindow?.close()
+    }
+
+    private func restartApp() {
+        let appPath = Bundle.main.bundlePath
+        let task = Process()
+        task.launchPath = "/bin/sh"
+        task.arguments = ["-c", "sleep 0.5 && open \"\(appPath)\""]
+        try? task.run()
+        NSApp.terminate(nil)
+    }
+
+    // MARK: - Permission Check
+
+    private func startPermissionCheck() {
+        checkPermission()
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            checkPermission()
+        }
+    }
+
+    private func stopPermissionCheck() {
+        permissionTimer?.invalidate()
+        permissionTimer = nil
+    }
+
+    private func checkPermission() {
+        hasPermission = AXIsProcessTrusted()
+    }
+}
+
+// MARK: - Progress Indicator
+
+struct ProgressIndicator: View {
+    let step: Int
+    let total: Int
+
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(0..<4) { index in
+            ForEach(0..<total, id: \.self) { i in
                 Circle()
-                    .fill(index <= stepIndex ? Color.accentColor : Color.gray.opacity(0.3))
+                    .fill(i <= step ? Color.accentColor : Color.gray.opacity(0.3))
                     .frame(width: 8, height: 8)
             }
         }
@@ -138,41 +127,29 @@ struct ProgressIndicator: View {
 
 // MARK: - Welcome Step
 
-struct WelcomeStep: View {
+struct WelcomeStepView: View {
     let onNext: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
 
-            // Icon
             Image(systemName: "keyboard.fill")
                 .font(.system(size: 60))
                 .foregroundColor(.accentColor)
 
-            // Title
             Text("Chào mừng đến với \(AppMetadata.name)")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 26, weight: .bold))
 
-            // Description
             Text(AppMetadata.tagline)
-                .font(.title3)
-                .foregroundColor(.secondary)
-
-            Text("Gõ tiếng Việt nhanh, chính xác với Telex hoặc VNI")
                 .font(.body)
                 .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
 
             Spacer()
 
-            // Next button
             Button(action: onNext) {
-                HStack {
-                    Text("Bắt đầu")
-                    Image(systemName: "arrow.right")
-                }
-                .frame(width: 150)
+                Label("Bắt đầu", systemImage: "arrow.right")
+                    .frame(width: 140)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -185,178 +162,86 @@ struct WelcomeStep: View {
 
 // MARK: - Permission Step
 
-struct PermissionStep: View {
-    @Binding var status: OnboardingView.PermissionStatus
-    @Binding var isChecking: Bool
-    let onNext: () -> Void
+struct PermissionStepView: View {
+    let hasPermission: Bool
     let onRestart: () -> Void
 
-    @State private var hasRequestedPermission = false
-    @State private var showRestartPrompt = false
-    @State private var permissionTimer: Timer?
+    @State private var didOpenSettings = false
 
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
 
-            // Icon based on status
-            Group {
-                switch status {
-                case .granted, .needsRestart:
-                    Image(systemName: "checkmark.shield.fill")
-                        .foregroundColor(.green)
-                default:
-                    Image(systemName: "lock.shield.fill")
-                        .foregroundColor(.accentColor)
-                }
-            }
-            .font(.system(size: 50))
+            Image(systemName: hasPermission ? "checkmark.shield.fill" : "lock.shield.fill")
+                .font(.system(size: 50))
+                .foregroundColor(hasPermission ? .green : .accentColor)
 
-            // Title
-            Text(titleText)
+            Text(hasPermission ? "Đã cấp quyền!" : "Cấp quyền Accessibility")
                 .font(.system(size: 24, weight: .bold))
 
-            // Description
-            Text(descriptionText)
+            Text(hasPermission
+                 ? "Nhấn nút bên dưới để khởi động lại và bắt đầu sử dụng."
+                 : "GoNhanh cần quyền Accessibility để gõ tiếng Việt.")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 400)
+                .frame(maxWidth: 380)
 
-            // Steps (when not granted)
-            if status == .notGranted || status == .needsRestart {
-                VStack(alignment: .leading, spacing: 12) {
-                    StepRow(number: 1, text: "Nhấn \"Mở Cài đặt\" bên dưới", isCompleted: hasRequestedPermission)
-                    StepRow(number: 2, text: "Bật GoNhanh trong Accessibility", isCompleted: status == .needsRestart)
-                    StepRow(number: 3, text: "Nhấn \"Khởi động lại\" bên dưới", isCompleted: false)
+            if !hasPermission {
+                VStack(alignment: .leading, spacing: 10) {
+                    StepRowView(number: 1, text: "Nhấn \"Mở Cài đặt\"", done: didOpenSettings)
+                    StepRowView(number: 2, text: "Bật GoNhanh trong danh sách", done: hasPermission)
+                    StepRowView(number: 3, text: "Nhấn \"Khởi động lại\"", done: false)
                 }
-                .padding(.vertical, 10)
+                .padding(.top, 8)
             }
 
             Spacer()
 
-            // Actions
-            HStack(spacing: 16) {
-                if status == .granted {
-                    Button(action: onNext) {
-                        HStack {
-                            Text("Tiếp tục")
-                            Image(systemName: "arrow.right")
-                        }
-                        .frame(width: 150)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                } else if status == .needsRestart {
-                    // Permission granted - show only restart button
-                    Button(action: onRestart) {
-                        HStack {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Khởi động lại")
-                        }
-                        .frame(width: 180)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                } else {
-                    // Not granted yet
-                    Button(action: requestPermission) {
-                        HStack {
-                            Image(systemName: "gear")
-                            Text("Mở Cài đặt")
-                        }
-                        .frame(width: 150)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(isChecking)
+            if hasPermission {
+                Button(action: onRestart) {
+                    Label("Khởi động lại", systemImage: "arrow.clockwise")
+                        .frame(width: 160)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            } else {
+                Button(action: openSettings) {
+                    Label("Mở Cài đặt", systemImage: "gear")
+                        .frame(width: 140)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
 
             Spacer().frame(height: 30)
         }
         .padding(30)
-        .onAppear {
-            startAutoCheck()
-        }
-        .onDisappear {
-            stopAutoCheck()
-        }
     }
 
-    private func startAutoCheck() {
-        // Auto-check permission every 1 second
-        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            let trusted = AXIsProcessTrusted()
-            DispatchQueue.main.async {
-                if trusted && status != .granted {
-                    // Permission granted - show success but require manual restart
-                    status = .needsRestart
-                }
-            }
-        }
-    }
-
-    private func stopAutoCheck() {
-        permissionTimer?.invalidate()
-        permissionTimer = nil
-    }
-
-    private var titleText: String {
-        switch status {
-        case .granted:
-            return "Đã cấp quyền!"
-        case .needsRestart:
-            return "Đã cấp quyền!"
-        default:
-            return "Cấp quyền Accessibility"
-        }
-    }
-
-    private var descriptionText: String {
-        switch status {
-        case .granted:
-            return "GoNhanh đã có quyền cần thiết để hoạt động."
-        case .needsRestart:
-            return "Nhấn nút bên dưới để khởi động lại app và bắt đầu sử dụng."
-        default:
-            return "GoNhanh cần quyền Accessibility để nhận phím bạn gõ và chuyển đổi thành tiếng Việt."
-        }
-    }
-
-    private func requestPermission() {
-        hasRequestedPermission = true
-        openSystemSettings()
-
-        // Show restart prompt after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            showRestartPrompt = true
-        }
-    }
-
-    private func openSystemSettings() {
-        // Open Accessibility settings (not Input Monitoring)
+    private func openSettings() {
+        didOpenSettings = true
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
     }
 }
 
-struct StepRow: View {
+struct StepRowView: View {
     let number: Int
     let text: String
-    let isCompleted: Bool
+    let done: Bool
 
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(isCompleted ? Color.green : Color.accentColor.opacity(0.2))
+                    .fill(done ? Color.green : Color.accentColor.opacity(0.2))
                     .frame(width: 24, height: 24)
 
-                if isCompleted {
+                if done {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.white)
                 } else {
                     Text("\(number)")
@@ -367,28 +252,25 @@ struct StepRow: View {
 
             Text(text)
                 .font(.body)
-                .foregroundColor(isCompleted ? .secondary : .primary)
+                .foregroundColor(done ? .secondary : .primary)
         }
     }
 }
 
 // MARK: - Setup Step
 
-struct SetupStep: View {
+struct SetupStepView: View {
+    @Binding var selectedMode: InputMode
     let onNext: () -> Void
-
-    @State private var selectedMode: InputMode = .telex
 
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
 
-            // Icon - Vietnamese "Aa" text
             Text("Aa")
-                .font(.system(size: 60, weight: .light, design: .rounded))
+                .font(.system(size: 56, weight: .light, design: .rounded))
                 .foregroundColor(.accentColor)
 
-            // Title
             Text("Chọn kiểu gõ")
                 .font(.system(size: 24, weight: .bold))
 
@@ -396,33 +278,21 @@ struct SetupStep: View {
                 .font(.body)
                 .foregroundColor(.secondary)
 
-            // Mode selection
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(InputMode.allCases, id: \.rawValue) { mode in
-                    ModeSelectionCard(
-                        mode: mode,
-                        isSelected: selectedMode == mode,
-                        onSelect: { selectedMode = mode }
-                    )
+                    ModeCard(mode: mode, isSelected: selectedMode == mode) {
+                        selectedMode = mode
+                    }
                 }
             }
-            .frame(maxWidth: 350)
-            .padding(.top, 10)
+            .frame(maxWidth: 340)
+            .padding(.top, 8)
 
             Spacer()
 
-            // Next button
-            Button(action: {
-                // Save selected mode (default is Telex)
-                UserDefaults.standard.set(selectedMode.rawValue, forKey: SettingsKey.method)
-                RustBridge.setMethod(selectedMode.rawValue)
-                onNext()
-            }) {
-                HStack {
-                    Text("Tiếp tục")
-                    Image(systemName: "arrow.right")
-                }
-                .frame(width: 150)
+            Button(action: onNext) {
+                Label("Tiếp tục", systemImage: "arrow.right")
+                    .frame(width: 140)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -433,40 +303,31 @@ struct SetupStep: View {
     }
 }
 
-struct ModeSelectionCard: View {
+struct ModeCard: View {
     let mode: InputMode
     let isSelected: Bool
-    let onSelect: () -> Void
+    let onTap: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
+        Button(action: onTap) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(mode.name)
                         .font(.headline)
                         .foregroundColor(.primary)
-
                     Text(mode.description)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-
                 Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.accentColor)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.title2)
-                        .foregroundColor(.gray.opacity(0.5))
-                }
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundColor(isSelected ? .accentColor : .gray.opacity(0.4))
             }
-            .padding(16)
+            .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? Color.accentColor.opacity(0.1) : Color.gray.opacity(0.1))
+                    .fill(isSelected ? Color.accentColor.opacity(0.1) : Color.gray.opacity(0.08))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -479,48 +340,37 @@ struct ModeSelectionCard: View {
 
 // MARK: - Done Step
 
-struct DoneStep: View {
+struct DoneStepView: View {
     let onFinish: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
 
-            // Icon
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 60))
                 .foregroundColor(.green)
 
-            // Title
             Text("Sẵn sàng!")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 26, weight: .bold))
 
-            // Description
-            VStack(spacing: 8) {
-                Text("GoNhanh đã được cài đặt thành công")
-                    .font(.title3)
+            Text("Bạn có thể bắt đầu gõ tiếng Việt ngay")
+                .font(.body)
+                .foregroundColor(.secondary)
 
-                Text("Bạn có thể bắt đầu gõ tiếng Việt ngay bây giờ")
-                    .font(.body)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                TipRowView(icon: "menubar.rectangle", text: "Click icon menu bar để bật/tắt")
+                TipRowView(icon: "keyboard", text: "Gõ bình thường, dấu tự động được thêm")
             }
-
-            // Tips
-            VStack(alignment: .leading, spacing: 12) {
-                TipRow(icon: "menubar.rectangle", text: "Click icon trên menu bar để bật/tắt")
-                TipRow(icon: "keyboard", text: "Gõ như bình thường, dấu sẽ tự động được thêm")
-            }
-            .padding(.vertical, 20)
-            .padding(.horizontal, 30)
+            .padding(20)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(12)
 
             Spacer()
 
-            // Finish button
             Button(action: onFinish) {
                 Text("Hoàn tất")
-                    .frame(width: 150)
+                    .frame(width: 140)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -531,17 +381,15 @@ struct DoneStep: View {
     }
 }
 
-struct TipRow: View {
+struct TipRowView: View {
     let icon: String
     let text: String
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
                 .foregroundColor(.accentColor)
-                .frame(width: 24)
-
+                .frame(width: 20)
             Text(text)
                 .font(.body)
         }
@@ -552,12 +400,4 @@ struct TipRow: View {
 
 extension Notification.Name {
     static let onboardingCompleted = Notification.Name("onboardingCompleted")
-}
-
-// MARK: - Preview
-
-struct OnboardingView_Previews: PreviewProvider {
-    static var previews: some View {
-        OnboardingView()
-    }
 }
