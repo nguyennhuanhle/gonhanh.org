@@ -176,8 +176,15 @@ class UpdateManager: NSObject, ObservableObject {
             """
         shell("(\(script)) &")
 
-        // Quit current app
-        DispatchQueue.main.async { NSApp.terminate(nil) }
+        // Force quit - NSApp.terminate may not work from background thread
+        DispatchQueue.main.async {
+            NSApp.terminate(nil)
+        }
+
+        // Fallback: if terminate doesn't work within 1 second, force exit
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
+            exit(0)
+        }
 
         return nil
     }
