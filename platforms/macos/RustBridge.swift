@@ -28,6 +28,121 @@ private enum Log {
     static func method(_ name: String) { write("M: \(name)") }
     static func info(_ msg: String) { write("I: \(msg)") }
     static func skip() { write("K: skip (self)") }
+    static func queue(_ msg: String) { write("Q: \(msg)") }
+}
+
+// MARK: - Method Detection
+
+private enum Method { case fast, slow, selection }
+
+// MARK: - Text Injector (Async with Serial Queue)
+
+/// Handles text injection with proper sequencing to prevent race conditions
+private class TextInjector {
+    static let shared = TextInjector()
+
+    /// Serial queue ensures text injections happen one at a time
+    private let queue = DispatchQueue(label: "org.gonhanh.textinjector", qos: .userInteractive)
+
+    /// Semaphore to block keyboard callback until injection completes
+    private let completionSemaphore = DispatchSemaphore(value: 1)
+
+    /// Track if currently processing to handle rapid keystrokes
+    private var isProcessing = false
+
+    private init() {}
+
+    /// Inject text replacement synchronously (blocks until complete)
+    /// This ensures the next keystroke waits for current injection to finish
+    func injectSync(backspace bs: Int, text: String, method: Method, delays: (UInt32, UInt32, UInt32)) {
+        // Wait for any previous injection to complete
+        completionSemaphore.wait()
+        defer { completionSemaphore.signal() }
+
+        isProcessing = true
+        defer { isProcessing = false }
+
+        Log.queue("start bs=\(bs) text=\"\(text)\"")
+
+        switch method {
+        case .selection:
+            performSelectionInjection(bs: bs, text: text)
+        case .slow, .fast:
+            performBackspaceInjection(bs: bs, text: text, delays: delays)
+        }
+
+        // Additional settle time for slow apps
+        let settleTime: UInt32 = method == .slow ? 20000 : 5000  // 20ms or 5ms
+        usleep(settleTime)
+
+        Log.queue("done")
+    }
+
+    private func performBackspaceInjection(bs: Int, text: String, delays: (UInt32, UInt32, UInt32)) {
+        guard let src = CGEventSource(stateID: .privateState) else { return }
+
+        // Send backspaces
+        for _ in 0..<bs {
+            guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: false) else { continue }
+            dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+            up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+            dn.post(tap: .cgSessionEventTap)
+            up.post(tap: .cgSessionEventTap)
+            usleep(delays.0)
+        }
+
+        // Wait after backspaces
+        if bs > 0 { usleep(delays.1) }
+
+        // Send text
+        let utf16 = Array(text.utf16)
+        guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true),
+              let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) else { return }
+        dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+        up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+        dn.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+        up.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+        dn.post(tap: .cgSessionEventTap)
+        up.post(tap: .cgSessionEventTap)
+        usleep(delays.2)
+
+        Log.send("bs", bs, text)
+    }
+
+    private func performSelectionInjection(bs: Int, text: String) {
+        guard let src = CGEventSource(stateID: .privateState) else { return }
+
+        // Select characters with Shift+Left
+        for _ in 0..<bs {
+            guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0x7B, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: src, virtualKey: 0x7B, keyDown: false) else { continue }
+            dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+            up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+            dn.flags = .maskShift
+            up.flags = .maskShift
+            dn.post(tap: .cgSessionEventTap)
+            up.post(tap: .cgSessionEventTap)
+            usleep(1000)  // 1ms between selections
+        }
+
+        // Small delay after selection
+        if bs > 0 { usleep(3000) }
+
+        // Type replacement text
+        let utf16 = Array(text.utf16)
+        guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true),
+              let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) else { return }
+        dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+        up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
+        dn.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+        up.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
+        dn.post(tap: .cgSessionEventTap)
+        up.post(tap: .cgSessionEventTap)
+        usleep(2000)  // 2ms after text
+
+        Log.send("sel", bs, text)
+    }
 }
 
 // MARK: - FFI (Rust Bridge)
@@ -209,8 +324,6 @@ private func keyboardCallback(
 
 // MARK: - Text Replacement
 
-private enum Method { case fast, slow, selection }
-
 private func detectMethod() -> (Method, (UInt32, UInt32, UInt32)) {
     guard let app = NSWorkspace.shared.frontmostApplication,
           let bundleId = app.bundleIdentifier else { return (.fast, (200, 800, 500)) }
@@ -252,66 +365,8 @@ private func sendReplacement(backspace bs: Int, chars: [Character]) {
     let (method, delays) = detectMethod()
     let str = String(chars)
 
-    switch method {
-    case .selection: sendWithSelection(bs: bs, str: str)
-    case .slow, .fast: sendWithBackspace(bs: bs, str: str, delays: delays)
-    }
-}
-
-private func sendWithBackspace(bs: Int, str: String, delays: (UInt32, UInt32, UInt32)) {
-    guard let src = CGEventSource(stateID: .privateState) else { return }
-
-    for _ in 0..<bs {
-        guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: true),
-              let up = CGEvent(keyboardEventSource: src, virtualKey: 0x33, keyDown: false) else { continue }
-        dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-        up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-        dn.post(tap: .cgSessionEventTap)
-        up.post(tap: .cgSessionEventTap)
-        usleep(delays.0)
-    }
-
-    if bs > 0 { usleep(delays.1) }
-
-    let utf16 = Array(str.utf16)
-    guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true),
-          let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) else { return }
-    dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-    up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-    dn.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-    up.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-    dn.post(tap: .cgSessionEventTap)
-    up.post(tap: .cgSessionEventTap)
-    usleep(delays.2)
-
-    Log.send("bs", bs, str)
-}
-
-private func sendWithSelection(bs: Int, str: String) {
-    guard let src = CGEventSource(stateID: .privateState) else { return }
-
-    for _ in 0..<bs {
-        guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0x7B, keyDown: true),
-              let up = CGEvent(keyboardEventSource: src, virtualKey: 0x7B, keyDown: false) else { continue }
-        dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-        up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-        dn.flags = .maskShift
-        up.flags = .maskShift
-        dn.post(tap: .cgSessionEventTap)
-        up.post(tap: .cgSessionEventTap)
-    }
-
-    let utf16 = Array(str.utf16)
-    guard let dn = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true),
-          let up = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) else { return }
-    dn.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-    up.setIntegerValueField(.eventSourceUserData, value: kEventMarker)
-    dn.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-    up.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-    dn.post(tap: .cgSessionEventTap)
-    up.post(tap: .cgSessionEventTap)
-
-    Log.send("sel", bs, str)
+    // Use TextInjector for synchronized text injection
+    TextInjector.shared.injectSync(backspace: bs, text: str, method: method, delays: delays)
 }
 
 // MARK: - Notifications
