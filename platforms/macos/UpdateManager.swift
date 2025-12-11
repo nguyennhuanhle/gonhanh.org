@@ -121,36 +121,50 @@ class UpdateManager: NSObject, ObservableObject {
     }
 
     private func performInstall(dmgPath: URL) -> String? {
-        let mountPoint = "/Volumes/GoNhanh"
         let appName = "GoNhanh.app"
-        let sourceApp = "\(mountPoint)/\(appName)"
         let destApp = "/Applications/\(appName)"
+        let pid = ProcessInfo.processInfo.processIdentifier
 
-        // Mount
-        guard shell("hdiutil attach '\(dmgPath.path)' -nobrowse -quiet -mountpoint '\(mountPoint)'").ok else {
+        // Unmount any existing GoNhanh volume first
+        shell("hdiutil detach /Volumes/GoNhanh -quiet -force 2>/dev/null")
+
+        // Mount DMG (let system choose mount point)
+        let mountResult = shell("hdiutil attach '\(dmgPath.path)' -nobrowse -quiet")
+        guard mountResult.ok else {
             return "Không thể mở file cài đặt."
         }
 
-        // Validate
-        guard FileManager.default.fileExists(atPath: sourceApp) else {
-            shell("hdiutil detach '\(mountPoint)' -quiet -force")
+        // Find the actual mount point
+        let mountPoint = shell("hdiutil info | grep -A1 '\(dmgPath.path)' | tail -1 | awk '{print $NF}'").output
+        let sourceApp = "\(mountPoint)/\(appName)"
+
+        guard !mountPoint.isEmpty, FileManager.default.fileExists(atPath: sourceApp) else {
+            shell("hdiutil detach '\(mountPoint)' -quiet -force 2>/dev/null")
             return "File cài đặt bị lỗi."
         }
 
-        // Copy
-        guard shell("rm -rf '\(destApp)' && cp -R '\(sourceApp)' '\(destApp)'").ok else {
+        // Copy to temp location first (avoid overwriting running app)
+        let tempApp = "/tmp/GoNhanh-update.app"
+        shell("rm -rf '\(tempApp)'")
+        guard shell("cp -R '\(sourceApp)' '\(tempApp)'").ok else {
             shell("hdiutil detach '\(mountPoint)' -quiet -force")
-            return "Không có quyền cài vào Applications."
+            return "Không thể chuẩn bị cài đặt."
         }
 
-        // Unmount
+        // Unmount DMG
         shell("hdiutil detach '\(mountPoint)' -quiet -force")
 
-        // Relaunch: spawn background process that waits for this app to quit, then opens new app
-        let pid = ProcessInfo.processInfo.processIdentifier
-        shell("(while kill -0 \(pid) 2>/dev/null; do sleep 0.1; done; sleep 0.3; open '\(destApp)') &")
+        // Background script: wait for app quit → replace → relaunch
+        let script = """
+            while kill -0 \(pid) 2>/dev/null; do sleep 0.1; done
+            sleep 0.3
+            rm -rf '\(destApp)'
+            mv '\(tempApp)' '\(destApp)'
+            open '\(destApp)'
+            """
+        shell("(\(script)) &")
 
-        // Quit
+        // Quit current app
         DispatchQueue.main.async { NSApp.terminate(nil) }
 
         return nil
