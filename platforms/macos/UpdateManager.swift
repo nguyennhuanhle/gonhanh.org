@@ -24,6 +24,7 @@ class UpdateManager: NSObject, ObservableObject {
 
     private var downloadTask: URLSessionDownloadTask?
     private var downloadedDMGPath: URL?
+    private var downloadingVersion: String?
 
     private let autoCheckInterval: TimeInterval = 24 * 60 * 60  // 24 hours
     private let autoCheckKey = "gonhanh.update.lastCheck"
@@ -53,6 +54,7 @@ class UpdateManager: NSObject, ObservableObject {
     /// Download the update
     func downloadUpdate(_ info: UpdateInfo) {
         state = .downloading(progress: 0)
+        downloadingVersion = info.version
 
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
         downloadTask = session.downloadTask(with: info.downloadURL)
@@ -211,8 +213,10 @@ class UpdateManager: NSObject, ObservableObject {
 
 extension UpdateManager: URLSessionDownloadDelegate {
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-        let destinationURL = downloadsURL.appendingPathComponent("GoNhanh.dmg")
+        // Use temp directory instead of Downloads (cleaner, auto-cleanup)
+        let tempDir = FileManager.default.temporaryDirectory
+        let version = downloadingVersion ?? "latest"
+        let destinationURL = tempDir.appendingPathComponent("GoNhanh-\(version).dmg")
 
         do {
             // Remove old file if exists
