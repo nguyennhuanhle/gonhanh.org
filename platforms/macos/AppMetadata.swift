@@ -71,6 +71,7 @@ enum SettingsKey {
     static let permissionGranted = "gonhanh.permission.granted"
     static let toggleShortcut = "gonhanh.shortcut.toggle"
     static let reopenSettingsAfterUpdate = "gonhanh.update.reopenSettings"
+    static let autoCorrectMode = "gonhanh.autocorrect.mode"
 }
 
 // MARK: - Keyboard Shortcut Model

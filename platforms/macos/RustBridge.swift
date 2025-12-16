@@ -200,6 +200,11 @@ private struct ImeResult {
 @_silgen_name("ime_remove_shortcut") private func ime_remove_shortcut(_ trigger: UnsafePointer<CChar>?)
 @_silgen_name("ime_clear_shortcuts") private func ime_clear_shortcuts()
 
+// Auto-correct FFI
+@_silgen_name("ime_autocorrect_mode") private func ime_autocorrect_mode(_ mode: UInt8)
+@_silgen_name("ime_autocorrect_get_mode") private func ime_autocorrect_get_mode() -> UInt8
+@_silgen_name("ime_autocorrect_enabled") private func ime_autocorrect_enabled() -> Bool
+
 // MARK: - RustBridge (Public API)
 
 class RustBridge {
@@ -272,6 +277,29 @@ class RustBridge {
             addShortcut(trigger: shortcut.key, replacement: shortcut.value)
         }
         Log.info("Synced \(shortcuts.filter { $0.enabled }.count) shortcuts")
+    }
+
+    // MARK: - Auto-correct
+
+    /// Set auto-correct mode
+    /// - 0: Off (default)
+    /// - 1: Vietnamese only
+    /// - 2: English only
+    /// - 3: Both (All)
+    static func setAutoCorrectMode(_ mode: Int) {
+        ime_autocorrect_mode(UInt8(mode))
+        let modeNames = ["Off", "Vietnamese", "English", "All"]
+        Log.info("AutoCorrect mode: \(modeNames[mode])")
+    }
+
+    /// Get current auto-correct mode
+    static func getAutoCorrectMode() -> Int {
+        Int(ime_autocorrect_get_mode())
+    }
+
+    /// Check if auto-correct is enabled
+    static func isAutoCorrectEnabled() -> Bool {
+        ime_autocorrect_enabled()
     }
 }
 

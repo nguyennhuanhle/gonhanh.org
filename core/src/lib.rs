@@ -238,6 +238,61 @@ pub extern "C" fn ime_clear_shortcuts() {
 }
 
 // ============================================================
+// Auto-correct FFI
+// ============================================================
+
+/// Set auto-correct mode.
+///
+/// # Arguments
+/// * `mode` - Auto-correct mode:
+///   - 0 = Off (default)
+///   - 1 = Vietnamese only
+///   - 2 = English only
+///   - 3 = All (Vietnamese + English)
+///
+/// No-op if engine not initialized.
+#[no_mangle]
+pub extern "C" fn ime_autocorrect_mode(mode: u8) {
+    let mut guard = lock_engine();
+    if let Some(ref mut e) = *guard {
+        e.set_autocorrect_mode(mode);
+    }
+}
+
+/// Get current auto-correct mode.
+///
+/// # Returns
+/// * 0 = Off (default)
+/// * 1 = Vietnamese only
+/// * 2 = English only
+/// * 3 = All (Vietnamese + English)
+/// * 0 if engine not initialized
+#[no_mangle]
+pub extern "C" fn ime_autocorrect_get_mode() -> u8 {
+    let guard = lock_engine();
+    if let Some(ref e) = *guard {
+        e.autocorrect_mode()
+    } else {
+        0
+    }
+}
+
+/// Check if auto-correct is enabled.
+///
+/// # Returns
+/// * `true` if auto-correct mode is not Off
+/// * `false` if auto-correct is Off or engine not initialized
+#[no_mangle]
+pub extern "C" fn ime_autocorrect_enabled() -> bool {
+    let guard = lock_engine();
+    if let Some(ref e) = *guard {
+        e.is_autocorrect_enabled()
+    } else {
+        false
+    }
+}
+
+// ============================================================
 // Tests
 // ============================================================
 
@@ -388,6 +443,147 @@ mod tests {
         drop(guard);
 
         ime_clear_shortcuts();
+        ime_clear();
+    }
+
+    #[test]
+    #[serial]
+    fn test_autocorrect_ffi_mode() {
+        ime_init();
+
+        // Default mode should be Off (0)
+        assert_eq!(ime_autocorrect_get_mode(), 0);
+        assert!(!ime_autocorrect_enabled());
+
+        // Set Vietnamese mode
+        ime_autocorrect_mode(1);
+        assert_eq!(ime_autocorrect_get_mode(), 1);
+        assert!(ime_autocorrect_enabled());
+
+        // Set English mode
+        ime_autocorrect_mode(2);
+        assert_eq!(ime_autocorrect_get_mode(), 2);
+        assert!(ime_autocorrect_enabled());
+
+        // Set All mode
+        ime_autocorrect_mode(3);
+        assert_eq!(ime_autocorrect_get_mode(), 3);
+        assert!(ime_autocorrect_enabled());
+
+        // Set Off mode
+        ime_autocorrect_mode(0);
+        assert_eq!(ime_autocorrect_get_mode(), 0);
+        assert!(!ime_autocorrect_enabled());
+
+        // Invalid mode should default to Off
+        ime_autocorrect_mode(255);
+        assert_eq!(ime_autocorrect_get_mode(), 0);
+
+        ime_clear();
+    }
+
+    #[test]
+    #[serial]
+    fn test_autocorrect_ffi_vietnamese_correction() {
+        ime_init();
+        ime_method(0); // Telex
+        ime_autocorrect_mode(1); // Vietnamese only
+
+        // Verify mode is set correctly
+        assert_eq!(ime_autocorrect_get_mode(), 1, "Mode should be Vietnamese (1)");
+        assert!(ime_autocorrect_enabled(), "Auto-correct should be enabled");
+
+        // Test Vietnamese abbreviation correction: "ko" -> "không"
+        // "ko" is a common abbreviation that doesn't involve Telex transforms
+        let r1 = ime_key(keys::K, false, false);
+        assert!(!r1.is_null());
+        unsafe { ime_free(r1) };
+
+        let r2 = ime_key(keys::O, false, false);
+        assert!(!r2.is_null());
+        unsafe { ime_free(r2) };
+
+        // Press SPACE to trigger auto-correct
+        let r3 = ime_key(keys::SPACE, false, false);
+        assert!(!r3.is_null());
+        unsafe {
+            // Should correct "ko" to "không " (with space)
+            assert_eq!((*r3).action, 1, "Action should be Send (1)");
+            assert_eq!((*r3).backspace, 2); // Delete "ko" (2 chars)
+            // Verify correction output is "không "
+            let mut output = String::new();
+            for i in 0..(*r3).count as usize {
+                if let Some(ch) = char::from_u32((*r3).chars[i]) {
+                    output.push(ch);
+                }
+            }
+            assert_eq!(output, "không ", "Should correct to 'không '");
+            ime_free(r3);
+        }
+
+        // Disable and verify no correction
+        ime_autocorrect_mode(0);
+        ime_clear();
+    }
+
+    #[test]
+    #[serial]
+    fn test_autocorrect_ffi_english_correction() {
+        ime_init();
+        ime_method(0); // Telex
+        ime_autocorrect_mode(2); // English only
+
+        // Type "teh" (common typo for "the")
+        let r1 = ime_key(keys::T, false, false);
+        unsafe { ime_free(r1) };
+
+        let r2 = ime_key(keys::E, false, false);
+        unsafe { ime_free(r2) };
+
+        let r3 = ime_key(keys::H, false, false);
+        unsafe { ime_free(r3) };
+
+        // Press SPACE to trigger auto-correct
+        let r4 = ime_key(keys::SPACE, false, false);
+        assert!(!r4.is_null());
+        unsafe {
+            // Should correct "teh" to "the "
+            assert_eq!((*r4).action, 1); // Send action
+            assert_eq!((*r4).backspace, 3); // Delete "teh"
+            assert_eq!((*r4).chars[0], 't' as u32);
+            assert_eq!((*r4).chars[1], 'h' as u32);
+            assert_eq!((*r4).chars[2], 'e' as u32);
+            assert_eq!((*r4).chars[3], ' ' as u32);
+            ime_free(r4);
+        }
+
+        ime_autocorrect_mode(0);
+        ime_clear();
+    }
+
+    #[test]
+    #[serial]
+    fn test_autocorrect_ffi_disabled_no_correction() {
+        ime_init();
+        ime_method(0);
+        ime_autocorrect_mode(0); // Off
+
+        // Type "teh"
+        let r1 = ime_key(keys::T, false, false);
+        unsafe { ime_free(r1) };
+        let r2 = ime_key(keys::E, false, false);
+        unsafe { ime_free(r2) };
+        let r3 = ime_key(keys::H, false, false);
+        unsafe { ime_free(r3) };
+
+        // Press SPACE - should NOT auto-correct
+        let r4 = ime_key(keys::SPACE, false, false);
+        assert!(!r4.is_null());
+        unsafe {
+            assert_eq!((*r4).action, 0); // None action (no correction)
+            ime_free(r4);
+        }
+
         ime_clear();
     }
 }

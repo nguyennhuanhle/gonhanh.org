@@ -39,6 +39,7 @@
 - 🎯 **Đặt dấu đúng vị trí** — Tự động theo [Quy tắc đặt dấu thanh mới](https://vi.wikipedia.org/wiki/Quy_t%E1%BA%AFc_%C4%91%E1%BA%B7t_d%E1%BA%A5u_thanh_c%E1%BB%A7a_ch%E1%BB%AF_Qu%E1%BB%91c_ng%E1%BB%AF) (`hoà`, `khoẻ`, `thuỷ` , thay cho `hòa`, `khỏe`, `thủy`...)
 - 🔤 **Nhận diện tiếng Anh** — `Windows`, `Fix` không bị thêm dấu
 - ✂️ **Gõ tắt** — `vn` → `Việt Nam`, `ko` → `không`
+- ✏️ **Tự sửa lỗi** — Tự động sửa lỗi chính tả (`teh` → `the`, `ko` → `không`) · [Chi tiết](docs/auto-correct.md)
 - ⚡ **Nhanh & Nhẹ** — <1ms · ~5MB RAM
 - 🌗 **Dark/Light** — Tự động theo hệ thống
 - 🔌 **Tương thích mọi app** — Terminal, VS Code, Chrome, Word, Excel...

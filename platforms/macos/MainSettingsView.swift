@@ -36,6 +36,24 @@ enum UpdateStatus: Equatable {
     }
 }
 
+// MARK: - Auto-correct Mode
+
+enum AutoCorrectMode: Int, CaseIterable {
+    case off = 0
+    case vietnamese = 1
+    case english = 2
+    case all = 3
+
+    var name: String {
+        switch self {
+        case .off: return "Tắt"
+        case .vietnamese: return "Tiếng Việt"
+        case .english: return "Tiếng Anh"
+        case .all: return "Tất cả"
+        }
+    }
+}
+
 // MARK: - App State
 
 class AppState: ObservableObject {
@@ -54,6 +72,13 @@ class AppState: ObservableObject {
             UserDefaults.standard.set(currentMethod.rawValue, forKey: SettingsKey.method)
             RustBridge.setMethod(currentMethod.rawValue)
             NotificationCenter.default.post(name: .menuStateChanged, object: nil)
+        }
+    }
+
+    @Published var autoCorrectMode: AutoCorrectMode {
+        didSet {
+            UserDefaults.standard.set(autoCorrectMode.rawValue, forKey: SettingsKey.autoCorrectMode)
+            RustBridge.setAutoCorrectMode(autoCorrectMode.rawValue)
         }
     }
 
@@ -101,10 +126,13 @@ class AppState: ObservableObject {
     init() {
         isEnabled = UserDefaults.standard.object(forKey: SettingsKey.enabled) as? Bool ?? true
         currentMethod = InputMode(rawValue: UserDefaults.standard.integer(forKey: SettingsKey.method)) ?? .telex
+        autoCorrectMode = AutoCorrectMode(rawValue: UserDefaults.standard.integer(forKey: SettingsKey.autoCorrectMode)) ?? .off
         toggleShortcut = KeyboardShortcut.load()
         excludedApps = Self.detectInstalledExcludedApps()
         checkForUpdates()
         setupObservers()
+        // Sync auto-correct mode to engine on init
+        RustBridge.setAutoCorrectMode(autoCorrectMode.rawValue)
     }
 
     /// Only add apps to excluded list if they are actually installed
@@ -450,6 +478,24 @@ struct SettingsPageView: View {
                     shortcut: $appState.toggleShortcut,
                     isRecording: $isRecordingShortcut
                 )
+
+                Divider().padding(.leading, 12)
+
+                // Auto-correct mode
+                HStack {
+                    Text("Tự sửa lỗi chính tả")
+                        .font(.system(size: 13))
+                    Spacer()
+                    Picker("", selection: $appState.autoCorrectMode) {
+                        ForEach(AutoCorrectMode.allCases, id: \.self) { mode in
+                            Text(mode.name).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 120)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
             .background(
                 RoundedRectangle(cornerRadius: 10)

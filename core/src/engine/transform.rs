@@ -150,11 +150,13 @@ fn find_tone_targets(buffer_keys: &[u16], key: u16, tone_value: u8, method: u8) 
 
 /// Find targets for horn modifier (ơ, ư, ươ compound)
 ///
-/// Special: if "uo" adjacent, apply horn to BOTH (ươ compound)
+/// Special cases:
+/// - "uo" adjacent → apply horn to BOTH (ươ compound)
+/// - "uu" adjacent → apply horn to FIRST u only (ưu compound, e.g., "lưu")
 fn find_horn_targets(buffer_keys: &[u16], vowel_positions: &[usize]) -> Vec<usize> {
     let mut targets = vec![];
 
-    // Check for uo compound first
+    // Check for compound patterns first
     let len = vowel_positions.len();
     if len >= 2 {
         for i in 0..len - 1 {
@@ -166,11 +168,16 @@ fn find_horn_targets(buffer_keys: &[u16], vowel_positions: &[usize]) -> Vec<usiz
                 let k1 = buffer_keys[pos1];
                 let k2 = buffer_keys[pos2];
 
-                // uo or ou compound
+                // uo or ou compound → horn on both
                 if (k1 == keys::U && k2 == keys::O) || (k1 == keys::O && k2 == keys::U) {
-                    // Apply to both
                     targets.push(pos1);
                     targets.push(pos2);
+                    return targets;
+                }
+
+                // uu compound → horn on first u only (ưu pattern: lưu, cứu, etc.)
+                if k1 == keys::U && k2 == keys::U {
+                    targets.push(pos1);
                     return targets;
                 }
             }

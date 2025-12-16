@@ -9,7 +9,9 @@
 //! 2. **Pattern-Based**: Scan entire buffer for patterns instead of case-by-case
 //! 3. **Shortcut Support**: User-defined abbreviations with priority
 //! 4. **Longest-Match-First**: For diacritic placement
+//! 5. **Auto-correct**: Optional spelling correction on word boundaries
 
+pub mod autocorrect;
 pub mod buffer;
 pub mod shortcut;
 pub mod syllable;
@@ -23,6 +25,7 @@ use crate::data::{
 };
 use crate::input::{self, ToneType};
 use crate::utils;
+use autocorrect::{AutoCorrect, AutoCorrectMode};
 use buffer::{Buffer, Char, MAX};
 use shortcut::{InputMethod, ShortcutTable};
 use validation::{is_foreign_word_pattern, is_valid};
@@ -91,6 +94,7 @@ pub struct Engine {
     enabled: bool,
     last_transform: Option<Transform>,
     shortcuts: ShortcutTable,
+    autocorrect: AutoCorrect,
 }
 
 impl Default for Engine {
@@ -107,6 +111,7 @@ impl Engine {
             enabled: true,
             last_transform: None,
             shortcuts: ShortcutTable::with_defaults(),
+            autocorrect: AutoCorrect::new(),
         }
     }
 
@@ -121,12 +126,34 @@ impl Engine {
         }
     }
 
+    /// Set auto-correct mode
+    /// 0 = Off (default), 1 = Vietnamese, 2 = English, 3 = All
+    pub fn set_autocorrect_mode(&mut self, mode: u8) {
+        self.autocorrect.set_mode(AutoCorrectMode::from_u8(mode));
+    }
+
+    /// Get current auto-correct mode
+    pub fn autocorrect_mode(&self) -> u8 {
+        self.autocorrect.mode().to_u8()
+    }
+
+    /// Check if auto-correct is enabled
+    pub fn is_autocorrect_enabled(&self) -> bool {
+        self.autocorrect.is_enabled()
+    }
+
     pub fn shortcuts(&self) -> &ShortcutTable {
         &self.shortcuts
     }
 
     pub fn shortcuts_mut(&mut self) -> &mut ShortcutTable {
         &mut self.shortcuts
+    }
+
+    /// Get reference to the buffer (for debugging/testing)
+    #[cfg(test)]
+    pub fn buf(&self) -> &Buffer {
+        &self.buf
     }
 
     /// Get current input method as InputMethod enum
@@ -240,7 +267,7 @@ impl Engine {
         self.handle_normal_letter(key, caps)
     }
 
-    /// Try word boundary shortcuts (triggered by space, punctuation, etc.)
+    /// Try word boundary shortcuts and auto-correct (triggered by space)
     fn try_word_boundary_shortcut(&mut self) -> Result {
         if self.buf.is_empty() {
             return Result::none();
@@ -249,13 +276,21 @@ impl Engine {
         let buffer_str = self.buf.to_string_preserve_case();
         let input_method = self.current_input_method();
 
-        // Check for word boundary shortcut match
+        // 1. First check for word boundary shortcut match (higher priority)
         if let Some(m) =
             self.shortcuts
                 .try_match_for_method(&buffer_str, Some(' '), true, input_method)
         {
             let output: Vec<char> = m.output.chars().collect();
             return Result::send(m.backspace_count as u8, &output);
+        }
+
+        // 2. Then try auto-correct if enabled
+        if let Some(correction) = self.autocorrect.try_correct(&buffer_str) {
+            // Add space after corrected word
+            let mut output: Vec<char> = correction.corrected.chars().collect();
+            output.push(' ');
+            return Result::send(correction.backspace_count as u8, &output);
         }
 
         Result::none()
