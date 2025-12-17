@@ -143,6 +143,7 @@ jobs:
   update-homebrew:
     needs: build-macos
     runs-on: ubuntu-latest
+    if: false  # Disabled - requires HOMEBREW_TAP_TOKEN secret
     steps:
       - name: Download DMG and get SHA256
         id: sha
