@@ -164,6 +164,47 @@ class AppState: ObservableObject {
         RustBridge.syncShortcuts(data)
     }
 
+    // MARK: - Import/Export Shortcuts (OpenKey format)
+
+    /// Export shortcuts to text format (compatible with OpenKey/UniKey)
+    func exportShortcuts() -> String {
+        var lines = [";Gõ Nhanh - Bảng gõ tắt"]
+        for shortcut in shortcuts where !shortcut.key.isEmpty {
+            lines.append("\(shortcut.key):\(shortcut.value)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Import shortcuts from OpenKey-compatible format (merges with existing)
+    func importShortcuts(from content: String) -> Int {
+        let lines = content.components(separatedBy: .newlines)
+        var imported = 0
+
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            // Skip empty lines and comments
+            guard !trimmed.isEmpty, !trimmed.hasPrefix(";") else { continue }
+
+            // Parse trigger:replacement
+            if let colonIndex = trimmed.firstIndex(of: ":") {
+                let trigger = String(trimmed[..<colonIndex]).trimmingCharacters(in: .whitespaces)
+                let replacement = String(trimmed[trimmed.index(after: colonIndex)...]).trimmingCharacters(in: .whitespaces)
+
+                guard !trigger.isEmpty else { continue }
+
+                // Check if trigger already exists
+                if let idx = shortcuts.firstIndex(where: { $0.key == trigger }) {
+                    shortcuts[idx].value = replacement
+                    shortcuts[idx].isEnabled = true
+                } else {
+                    shortcuts.append(ShortcutItem(key: trigger, value: replacement, isEnabled: true))
+                }
+                imported += 1
+            }
+        }
+        return imported
+    }
+
     func checkForUpdates() {
         updateStatus = .checking
         let startTime = Date()
@@ -527,7 +568,10 @@ struct SettingsPageView: View {
                             selectedShortcutId = appState.shortcuts.last?.id
                         }
                     },
-                    removeDisabled: appState.shortcuts.isEmpty
+                    removeDisabled: appState.shortcuts.isEmpty,
+                    onImport: { importShortcuts() },
+                    onExport: { exportShortcuts() },
+                    exportDisabled: appState.shortcuts.isEmpty
                 )
             }
 
@@ -536,6 +580,30 @@ struct SettingsPageView: View {
         .contentShape(Rectangle())
         .onTapGesture { clearSelection() }
         .onAppear { DispatchQueue.main.async { clearSelection() } }
+    }
+
+    // MARK: - Import/Export
+
+    private func importShortcuts() {
+        let panel = NSOpenPanel()
+        panel.title = "Nhập từ viết tắt"
+        panel.allowedContentTypes = [.plainText, .init(filenameExtension: "txt")!]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        if panel.runModal() == .OK, let url = panel.url,
+           let content = try? String(contentsOf: url, encoding: .utf8) {
+            _ = appState.importShortcuts(from: content)
+        }
+    }
+
+    private func exportShortcuts() {
+        let panel = NSSavePanel()
+        panel.title = "Xuất từ viết tắt"
+        panel.nameFieldStringValue = "gonhanh-shortcuts.txt"
+        panel.allowedContentTypes = [.plainText]
+        if panel.runModal() == .OK, let url = panel.url {
+            try? appState.exportShortcuts().write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     private func clearSelection() {
@@ -824,6 +892,9 @@ struct AddRemoveButtons: View {
     let onAdd: () -> Void
     let onRemove: () -> Void
     let removeDisabled: Bool
+    var onImport: (() -> Void)?
+    var onExport: (() -> Void)?
+    var exportDisabled: Bool = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -843,6 +914,27 @@ struct AddRemoveButtons: View {
             .disabled(removeDisabled)
 
             Spacer()
+
+            if let onImport = onImport {
+                Button(action: onImport) {
+                    Image(systemName: "square.and.arrow.up")
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.borderless)
+                .help("Nhập")
+
+                Divider().frame(height: 16)
+            }
+
+            if let onExport = onExport {
+                Button(action: onExport) {
+                    Image(systemName: "square.and.arrow.down")
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.borderless)
+                .disabled(exportDisabled)
+                .help("Xuất")
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
