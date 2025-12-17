@@ -217,9 +217,11 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Install WiX Toolset
+      - name: Setup WiX Toolset
         run: |
-          choco install wixtoolset -y --version=3.11.2
+          # Try to install WiX if not already present (ignore errors if already installed)
+          choco install wixtoolset -y --no-progress 2>$null || echo "WiX already installed"
+
           # Find WiX installation directory
           $WixPath = Get-ChildItem "C:\Program Files (x86)" -Filter "WiX Toolset*" -Directory | Select-Object -First 1
           if ($WixPath) {
