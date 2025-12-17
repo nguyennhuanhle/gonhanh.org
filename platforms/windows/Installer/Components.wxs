@@ -29,15 +29,6 @@
           <RegistryValue Type="integer" Name="FirstRun" Value="1" />
         </RegistryKey>
       </Component>
-
-      <!-- .NET Runtime DLLs (will be populated by heat.exe during build) -->
-      <!-- Placeholder - actual components generated during build -->
-      <Component Id="RuntimeDllsPlaceholder" Guid="816DB392-2DF3-45B7-AE00-AEB02015AB0D">
-        <File Id="RuntimePlaceholder"
-              Name="GoNhanh.dll"
-              Source="$(var.PublishDir)\GoNhanh.dll"
-              KeyPath="yes" />
-      </Component>
     </ComponentGroup>
 
     <!-- Start Menu Shortcut -->

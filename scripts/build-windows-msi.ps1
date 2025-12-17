@@ -82,6 +82,9 @@ try {
 
     dotnet publish -c $Configuration -r win-x64 --self-contained false -o $PublishDir /p:Version=$Version
     if ($LASTEXITCODE -ne 0) { throw "Dotnet publish failed" }
+
+    # Copy Rust DLL to publish directory
+    Copy-Item (Join-Path $NativeDir "gonhanh_core.dll") (Join-Path $PublishDir "gonhanh_core.dll") -Force
     Write-Host "  [OK] .NET app published to: $PublishDir" -ForegroundColor Green
 } finally {
     Pop-Location
@@ -126,22 +129,11 @@ try {
         -ext WixUIExtension `
         -ext WixUtilExtension `
         -ext WixNetFxExtension `
-        -cultures:en-us `
-        -loc "$InstallerDir\en-us.wxl" `
+        -b "$InstallerDir" `
         -spdb `
         Product.wixobj Components.wixobj
 
-    if ($LASTEXITCODE -ne 0) {
-        # Try without localization file if it doesn't exist
-        & $LightExe -out $MsiName `
-            -ext WixUIExtension `
-            -ext WixUtilExtension `
-            -ext WixNetFxExtension `
-            -spdb `
-            Product.wixobj Components.wixobj
-
-        if ($LASTEXITCODE -ne 0) { throw "Light linking failed" }
-    }
+    if ($LASTEXITCODE -ne 0) { throw "Light linking failed" }
 
     # Create version-less copy for "latest" download
     Copy-Item $MsiName $MsiNameLatest
