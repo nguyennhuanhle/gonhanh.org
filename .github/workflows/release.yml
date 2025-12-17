@@ -234,9 +234,16 @@ jobs:
           cd platforms/windows
           $V = "${{ github.ref_name }}".TrimStart('v')
           Compress-Archive -Path publish/* -DestinationPath "GoNhanh-$V-win-x64.zip"
+          # Create version-less copy for "latest" download link
+          Copy-Item "GoNhanh-$V-win-x64.zip" "GoNhanh-win-x64.zip"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-zip
           path: platforms/windows/*.zip
+
+      - name: Add to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: platforms/windows/*.zip

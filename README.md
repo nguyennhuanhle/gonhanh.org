@@ -31,8 +31,8 @@
 | Nền tảng | Trạng thái | Tải xuống | Hướng dẫn |
 |:--------:|:----------:|:---------:|:----------|
 | **macOS** | ✅ Sẵn sàng | [📥 Tải GoNhanh.dmg](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh.dmg) | [Xem hướng dẫn](docs/install-macos.md) |
-| **Linux** | ✅ Sẵn sàng | [📥 Tải gonhanh-linux.tar.gz](https://github.com/khaphanspace/gonhanh.org/releases/latest) | [Xem hướng dẫn](docs/install-linux.md) |
-| **Windows** | ✅ Sẵn sàng | [📥 Tải GoNhanh.zip](https://github.com/khaphanspace/gonhanh.org/releases/latest) | [Xem hướng dẫn](docs/install-windows.md) |
+| **Linux** | ✅ Sẵn sàng | [📥 Tải gonhanh-linux.tar.gz](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/gonhanh-linux.tar.gz) | [Xem hướng dẫn](docs/install-linux.md) |
+| **Windows** | ✅ Sẵn sàng | [📥 Tải GoNhanh-win-x64.zip](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh-win-x64.zip) | [Xem hướng dẫn](docs/install-windows.md) |
 
 ## ✨ Tính năng
 
