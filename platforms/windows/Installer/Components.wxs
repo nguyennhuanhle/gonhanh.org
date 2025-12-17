@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!-- Main Executable -->
+      <Component Id="MainExecutableComponent" Guid="AA36B1C4-6BFF-43C4-BFD6-7992931FE702">
+        <File Id="MainExecutable"
+              Name="GoNhanh.exe"
+              Source="$(var.PublishDir)\GoNhanh.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Rust Core DLL -->
+      <Component Id="RustCoreComponent" Guid="8E4D8D37-1ABA-4BA4-8B4F-7793D375208A">
+        <File Id="RustCoreDll"
+              Name="gonhanh_core.dll"
+              Source="$(var.PublishDir)\gonhanh_core.dll"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Registry Settings -->
+      <Component Id="RegistryComponent" Guid="E83098FD-9FF1-46BE-A6C4-22B0E507466E">
+        <RegistryKey Root="HKCU" Key="SOFTWARE\GoNhanh">
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" KeyPath="yes" />
+          <RegistryValue Type="string" Name="Version" Value="[ProductVersion]" />
+          <RegistryValue Type="integer" Name="InputMethod" Value="0" />
+          <RegistryValue Type="integer" Name="ModernTone" Value="1" />
+          <RegistryValue Type="integer" Name="Enabled" Value="1" />
+          <RegistryValue Type="integer" Name="FirstRun" Value="1" />
+        </RegistryKey>
+      </Component>
+
+      <!-- .NET Runtime DLLs (will be populated by heat.exe during build) -->
+      <!-- Placeholder - actual components generated during build -->
+      <Component Id="RuntimeDllsPlaceholder" Guid="816DB392-2DF3-45B7-AE00-AEB02015AB0D">
+        <File Id="RuntimePlaceholder"
+              Name="GoNhanh.dll"
+              Source="$(var.PublishDir)\GoNhanh.dll"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Start Menu Shortcut -->
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcut" Guid="55078EA0-3740-46FE-8901-BD59563F8A7A">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="Gõ Nhanh"
+                  Description="Vietnamese Input Method Engine"
+                  Target="[INSTALLFOLDER]GoNhanh.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RemoveFolder Id="CleanUpStartMenu" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="SOFTWARE\GoNhanh\Shortcuts"
+                       Name="StartMenu"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Desktop Shortcut (Optional) -->
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="882F506B-C7DD-4870-BA94-63CA2ADDFBF7">
+        <Shortcut Id="ApplicationDesktopShortcut"
+                  Name="Gõ Nhanh"
+                  Description="Vietnamese Input Method Engine"
+                  Target="[INSTALLFOLDER]GoNhanh.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RegistryValue Root="HKCU"
+                       Key="SOFTWARE\GoNhanh\Shortcuts"
+                       Name="Desktop"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Auto-Start with Windows (Optional) -->
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="AutoStartComponent" Guid="550B9022-FDDE-41A5-94D5-8CD73B85AF28">
+        <RegistryValue Root="HKCU"
+                       Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+                       Name="GoNhanh"
+                       Type="string"
+                       Value="&quot;[INSTALLFOLDER]GoNhanh.exe&quot;"
+                       KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

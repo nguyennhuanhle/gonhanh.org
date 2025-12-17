@@ -1,4 +1,4 @@
-# Development Guide
+﻿# Development Guide
 
 Complete guide for building, testing, and contributing to GoNhanh.
 
@@ -15,7 +15,7 @@ Complete guide for building, testing, and contributing to GoNhanh.
 
 ```bash
 # Clone repository
-git clone https://github.com/khaphanspace/gonhanh.org
+git clone https://github.com/nguyennhuanhle/gonhanh.org
 cd gonhanh.org
 
 # Setup development environment (installs Rust targets)
@@ -150,7 +150,7 @@ make install     # Copy app to /Applications
 
 ```bash
 # First-time setup
-git clone https://github.com/khaphanspace/gonhanh.org
+git clone https://github.com/nguyennhuanhle/gonhanh.org
 cd gonhanh.org
 make setup       # Installs rust targets (aarch64 + x86_64)
 make test        # Verify setup (runs cargo test)

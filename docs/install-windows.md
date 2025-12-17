@@ -1,4 +1,4 @@
-# Gõ Nhanh trên Windows
+﻿# Gõ Nhanh trên Windows
 
 > **Coming Soon** - Đang phát triển
 
@@ -36,8 +36,8 @@
 
 ## Theo dõi
 
-- [Releases](https://github.com/khaphanspace/gonhanh.org/releases)
-- [GitHub Issues](https://github.com/khaphanspace/gonhanh.org/issues)
+- [Releases](https://github.com/nguyennhuanhle/gonhanh.org/releases)
+- [GitHub Issues](https://github.com/nguyennhuanhle/gonhanh.org/issues)
 
 ---
 
@@ -52,7 +52,7 @@
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (C++ & .NET workload)
 
 ```powershell
-git clone https://github.com/khaphanspace/gonhanh.org.git
+git clone https://github.com/nguyennhuanhle/gonhanh.org.git
 cd gonhanh.org/platforms/windows
 cargo build --release
 ```

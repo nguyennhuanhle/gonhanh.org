@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" InitialTargets="EnsureWixToolsetInstalled" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProductVersion>3.11</ProductVersion>
+    <ProjectGuid>e7c9a1d3-8f3f-4e2c-9b5a-1d4e6f7a8b9c</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>GoNhanh-$(Version)-win-x64</OutputName>
+    <OutputType>Package</OutputType>
+    <Name>GoNhanh</Name>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PublishDir=$(PublishDir)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>PublishDir=$(PublishDir);Version=$(Version)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- WiX Source Files -->
+  <ItemGroup>
+    <Compile Include="Product.wxs" />
+    <Compile Include="Components.wxs" />
+  </ItemGroup>
+
+  <!-- Resources -->
+  <ItemGroup>
+    <Content Include="License.rtf" />
+    <Content Include="Resources\app.ico" />
+  </ItemGroup>
+
+  <!-- WiX Extensions -->
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+    <WixExtension Include="WixUtilExtension">
+      <HintPath>$(WixExtDir)\WixUtilExtension.dll</HintPath>
+      <Name>WixUtilExtension</Name>
+    </WixExtension>
+    <WixExtension Include="WixNetFxExtension">
+      <HintPath>$(WixExtDir)\WixNetFxExtension.dll</HintPath>
+      <Name>WixNetFxExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+
+  <!-- Import WiX Targets -->
+  <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />
+
+  <Target Name="EnsureWixToolsetInstalled" Condition=" '$(WixTargetsPath)' == '' AND !Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') ">
+    <Error Text="The WiX Toolset v3.11 (or newer) build tools must be installed to build this project. To download the WiX Toolset, visit https://wixtoolset.org/releases/" />
+  </Target>
+</Project>

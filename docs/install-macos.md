@@ -1,11 +1,11 @@
-# Gõ Nhanh trên macOS
+﻿# Gõ Nhanh trên macOS
 
 ## Cài đặt
 
 ### Cách 1: Homebrew (Khuyến nghị)
 
 ```bash
-brew tap khaphanspace/gonhanh
+brew tap nguyennhuanhle/gonhanh
 brew install --cask gonhanh
 ```
 
@@ -13,7 +13,7 @@ Sau đó cấp quyền: System Settings → Privacy & Security → Accessibility
 
 ### Cách 2: Tải thủ công
 
-1. **Tải về:** [GoNhanh.dmg](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh.dmg)
+1. **Tải về:** [GoNhanh.dmg](https://github.com/nguyennhuanhle/gonhanh.org/releases/latest/download/GoNhanh.dmg)
 
 2. **Cài đặt:** Mở file `.dmg` → Kéo vào **Applications**
 
@@ -73,7 +73,7 @@ brew upgrade --cask gonhanh
 **Homebrew:**
 ```bash
 brew uninstall --cask gonhanh
-brew untap khaphanspace/gonhanh  # Tùy chọn
+brew untap nguyennhuanhle/gonhanh  # Tùy chọn
 ```
 
 **Thủ công:**

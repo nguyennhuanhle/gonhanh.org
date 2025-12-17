@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # Generate release notes using Claude Code CLI
 # Usage: ./generate-release-notes.sh [version] [from-ref]
 # Examples:
@@ -75,7 +75,7 @@ OUTPUT FORMAT - Follow this EXACTLY:
 ### ⚡ Improvements
 - Improvement description here
 
-**Full Changelog**: https://github.com/khaphanspace/gonhanh.org/compare/$FROM_REF...$VERSION
+**Full Changelog**: https://github.com/nguyennhuanhle/gonhanh.org/compare/$FROM_REF...$VERSION
 
 RULES:
 1. Output ONLY markdown, start with '## What's Changed'

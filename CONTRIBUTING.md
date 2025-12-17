@@ -1,11 +1,11 @@
-# Contributing to Gõ Nhanh
+﻿# Contributing to Gõ Nhanh
 
 Thank you for your interest in contributing! 🎉
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/khaphanspace/gonhanh.org`
+2. Clone your fork: `git clone https://github.com/nguyennhuanhle/gonhanh.org`
 3. Run setup: `./scripts/setup.sh`
 4. Create a branch: `git checkout -b feature/my-feature`
 

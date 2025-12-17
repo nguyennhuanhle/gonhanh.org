@@ -1,18 +1,18 @@
-<h1 align="center">
+﻿<h1 align="center">
   <img src="assets/logo.png" alt="Gõ Nhanh Logo" width="128" height="128"><br>
   Gõ Nhanh
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/github/downloads/khaphanspace/gonhanh.org/total?label=Downloads" />
-  <img src="https://img.shields.io/github/last-commit/khaphanspace/gonhanh.org" />
+  <img src="https://img.shields.io/github/downloads/nguyennhuanhle/gonhanh.org/total?label=Downloads" />
+  <img src="https://img.shields.io/github/last-commit/nguyennhuanhle/gonhanh.org" />
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-macOS-000000?logo=apple&logoColor=white" />
   <img src="https://img.shields.io/badge/Platform-Linux-FCC624?logo=linux&logoColor=black" />
   <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" />
   <img src="https://img.shields.io/badge/License-BSD--3--Clause-blue.svg" alt="License: BSD-3-Clause">
-  <img src="https://github.com/khaphanspace/gonhanh.org/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <img src="https://github.com/nguyennhuanhle/gonhanh.org/actions/workflows/ci.yml/badge.svg" alt="CI">
 </p>
 
 <p align="center">
@@ -30,9 +30,9 @@
 
 | Nền tảng | Trạng thái | Tải xuống | Hướng dẫn |
 |:--------:|:----------:|:---------:|:----------|
-| **macOS** | ✅ Sẵn sàng | [📥 Tải GoNhanh.dmg](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh.dmg) | [Xem hướng dẫn](docs/install-macos.md) |
-| **Linux** | ✅ Sẵn sàng | [📥 Tải gonhanh-linux.tar.gz](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/gonhanh-linux.tar.gz) | [Xem hướng dẫn](docs/install-linux.md) |
-| **Windows** | ✅ Sẵn sàng | [📥 Tải GoNhanh-win-x64.zip](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh-win-x64.zip) | [Xem hướng dẫn](docs/install-windows.md) |
+| **macOS** | ✅ Sẵn sàng | [📥 Tải GoNhanh.dmg](https://github.com/nguyennhuanhle/gonhanh.org/releases/latest/download/GoNhanh.dmg) | [Xem hướng dẫn](docs/install-macos.md) |
+| **Linux** | ✅ Sẵn sàng | [📥 Tải gonhanh-linux.tar.gz](https://github.com/nguyennhuanhle/gonhanh.org/releases/latest/download/gonhanh-linux.tar.gz) | [Xem hướng dẫn](docs/install-linux.md) |
+| **Windows** | ✅ Sẵn sàng | [📥 Tải GoNhanh-win-x64.msi](https://github.com/nguyennhuanhle/gonhanh.org/releases/latest/download/GoNhanh-win-x64.msi) | [Xem hướng dẫn](docs/install-windows.md) |
 
 ## ✨ Tính năng
 
@@ -189,7 +189,7 @@ make install   # Copy vào /Applications
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=khaphanspace/gonhanh.org&type=Timeline&legend=bottom-right)](https://www.star-history.com/#khaphanspace/gonhanh.org&type=Timeline&legend=bottom-right)
+[![Star History Chart](https://api.star-history.com/svg?repos=nguyennhuanhle/gonhanh.org&type=Timeline&legend=bottom-right)](https://www.star-history.com/#nguyennhuanhle/gonhanh.org&type=Timeline&legend=bottom-right)
 
 ---
 

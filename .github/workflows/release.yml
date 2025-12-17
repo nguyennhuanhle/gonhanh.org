@@ -1,4 +1,4 @@
-name: Release
+﻿name: Release
 
 on:
   push:
@@ -148,7 +148,7 @@ jobs:
         id: sha
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          curl -L -o GoNhanh.dmg "https://github.com/khaphanspace/gonhanh.org/releases/download/${{ github.ref_name }}/GoNhanh.dmg"
+          curl -L -o GoNhanh.dmg "https://github.com/nguyennhuanhle/gonhanh.org/releases/download/${{ github.ref_name }}/GoNhanh.dmg"
           SHA256=$(shasum -a 256 GoNhanh.dmg | awk '{print $1}')
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -159,7 +159,7 @@ jobs:
           VERSION: ${{ steps.sha.outputs.version }}
           SHA256: ${{ steps.sha.outputs.sha256 }}
         run: |
-          git clone https://x-access-token:${GH_TOKEN}@github.com/khaphanspace/homebrew-gonhanh.git
+          git clone https://x-access-token:${GH_TOKEN}@github.com/nguyennhuanhle/homebrew-gonhanh.git
           cd homebrew-gonhanh
 
           cat > Casks/gonhanh.rb << 'EOF'
@@ -167,10 +167,10 @@ jobs:
             version "VERSION_PLACEHOLDER"
             sha256 "SHA256_PLACEHOLDER"
 
-            url "https://github.com/khaphanspace/gonhanh.org/releases/download/v#{version}/GoNhanh.dmg"
+            url "https://github.com/nguyennhuanhle/gonhanh.org/releases/download/v#{version}/GoNhanh.dmg"
             name "Gõ Nhanh"
             desc "High-performance Vietnamese Input Method Engine for macOS"
-            homepage "https://github.com/khaphanspace/gonhanh.org"
+            homepage "https://github.com/nguyennhuanhle/gonhanh.org"
 
             livecheck do
               url :url
@@ -217,33 +217,25 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Build Rust Core
+      - name: Install WiX Toolset
         run: |
-          cd core
-          cargo build --release --target x86_64-pc-windows-msvc
-          Copy-Item "target/x86_64-pc-windows-msvc/release/gonhanh_core.dll" `
-                    "../platforms/windows/GoNhanh/Native/gonhanh_core.dll"
+          choco install wixtoolset -y
+          # Add WiX to PATH for current session
+          $env:WIX = "C:\Program Files (x86)\WiX Toolset v3.11\"
+          echo "WIX=$env:WIX" >> $env:GITHUB_ENV
 
-      - name: Build WPF App
+      - name: Build MSI Installer
         run: |
-          cd platforms/windows/GoNhanh
-          dotnet publish -c Release -r win-x64 --self-contained false -o ../publish
-
-      - name: Package
-        run: |
-          cd platforms/windows
           $V = "${{ github.ref_name }}".TrimStart('v')
-          Compress-Archive -Path publish/* -DestinationPath "GoNhanh-$V-win-x64.zip"
-          # Create version-less copy for "latest" download link
-          Copy-Item "GoNhanh-$V-win-x64.zip" "GoNhanh-win-x64.zip"
+          powershell -ExecutionPolicy Bypass -File scripts/build-windows-msi.ps1 -Version $V -Configuration Release
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-zip
-          path: platforms/windows/*.zip
+          name: windows-msi
+          path: platforms/windows/msi-output/*.msi
 
       - name: Add to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: platforms/windows/*.zip
+          files: platforms/windows/msi-output/*.msi

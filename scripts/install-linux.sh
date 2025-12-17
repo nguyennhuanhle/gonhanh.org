@@ -1,8 +1,8 @@
-#!/bin/bash
+﻿#!/bin/bash
 # Gõ Nhanh Linux Installer
-# curl -fsSL https://raw.githubusercontent.com/khaphanspace/gonhanh.org/main/scripts/install-linux.sh | bash
+# curl -fsSL https://raw.githubusercontent.com/nguyennhuanhle/gonhanh.org/main/scripts/install-linux.sh | bash
 
-REPO="khaphanspace/gonhanh.org"
+REPO="nguyennhuanhle/gonhanh.org"
 TMP=$(mktemp -d)
 VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/' || echo "1.0.0")
 trap "rm -rf $TMP" EXIT

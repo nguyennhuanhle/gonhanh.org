@@ -1,4 +1,4 @@
-.PHONY: help all test format build build-linux clean setup install dmg release release-minor release-major
+﻿.PHONY: help all test format build build-linux clean setup install dmg release release-minor release-major
 
 # Auto-versioning
 TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)
@@ -67,7 +67,7 @@ release: ## Patch release (1.0.9 → 1.0.10)
 	@./scripts/generate-release-notes.sh v$(NEXT_PATCH) > /tmp/release_notes.md
 	@git tag -a v$(NEXT_PATCH) -F /tmp/release_notes.md --cleanup=verbatim
 	@git push origin main v$(NEXT_PATCH)
-	@echo "→ https://github.com/khaphanspace/gonhanh.org/releases"
+	@echo "→ https://github.com/nguyennhuanhle/gonhanh.org/releases"
 
 release-minor: ## Minor release (1.0.9 → 1.1.0)
 	@echo "$(TAG) → v$(NEXT_MINOR)"
@@ -75,7 +75,7 @@ release-minor: ## Minor release (1.0.9 → 1.1.0)
 	@./scripts/generate-release-notes.sh v$(NEXT_MINOR) > /tmp/release_notes.md
 	@git tag -a v$(NEXT_MINOR) -F /tmp/release_notes.md --cleanup=verbatim
 	@git push origin main v$(NEXT_MINOR)
-	@echo "→ https://github.com/khaphanspace/gonhanh.org/releases"
+	@echo "→ https://github.com/nguyennhuanhle/gonhanh.org/releases"
 
 release-major: ## Major release (1.0.9 → 2.0.0)
 	@echo "$(TAG) → v$(NEXT_MAJOR)"
@@ -83,4 +83,4 @@ release-major: ## Major release (1.0.9 → 2.0.0)
 	@./scripts/generate-release-notes.sh v$(NEXT_MAJOR) > /tmp/release_notes.md
 	@git tag -a v$(NEXT_MAJOR) -F /tmp/release_notes.md --cleanup=verbatim
 	@git push origin main v$(NEXT_MAJOR)
-	@echo "→ https://github.com/khaphanspace/gonhanh.org/releases"
+	@echo "→ https://github.com/nguyennhuanhle/gonhanh.org/releases"

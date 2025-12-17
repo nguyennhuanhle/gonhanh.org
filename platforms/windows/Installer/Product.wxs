@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+     xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
+
+  <?define ProductName = "Gõ Nhanh" ?>
+  <?define ProductVersion = "!(bind.FileVersion.MainExecutable)" ?>
+  <?define Manufacturer = "Gõ Nhanh Contributors" ?>
+  <?define UpgradeCode = "2D9A3D64-E1BC-4F40-960D-37843A882626" ?>
+
+  <Product Id="*"
+           Name="$(var.ProductName)"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="$(var.Manufacturer)"
+           UpgradeCode="$(var.UpgradeCode)">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perUser"
+             Description="$(var.ProductName) - Vietnamese Input Method Engine"
+             Comments="Free, fast, and reliable Vietnamese typing for Windows"
+             Manufacturer="$(var.Manufacturer)" />
+
+    <!-- Upgrade logic: Remove old version before installing new -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+                  AllowSameVersionUpgrades="yes"
+                  Schedule="afterInstallInitialize" />
+
+    <!-- Single CAB file embedded in MSI -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- .NET 8.0 Desktop Runtime prerequisite check -->
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_48_OR_LATER_INSTALLED"/>
+    <Condition Message="This application requires .NET 8.0 Desktop Runtime or later. Please install it from https://dotnet.microsoft.com/download/dotnet/8.0">
+      <![CDATA[Installed OR WIX_IS_NETFRAMEWORK_48_OR_LATER_INSTALLED]]>
+    </Condition>
+
+    <!-- Icon for Add/Remove Programs -->
+    <Icon Id="AppIcon" SourceFile="Resources\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/nguyennhuanhle/gonhanh.org" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/nguyennhuanhle/gonhanh.org/releases" />
+    <Property Id="ARPNOREPAIR" Value="yes" Secure="yes" />
+
+    <!-- Directory structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- Program Files -->
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="GoNhanh" />
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Gõ Nhanh" />
+      </Directory>
+
+      <!-- Desktop (optional) -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <!-- Features -->
+    <Feature Id="MainApplication" Title="Gõ Nhanh" Level="1" ConfigurableDirectory="INSTALLFOLDER"
+             Description="Vietnamese Input Method Engine - Core application files">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1000"
+             Description="Create a shortcut on the Desktop">
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+
+    <Feature Id="AutoStart" Title="Start with Windows" Level="1000"
+             Description="Automatically start Gõ Nhanh when Windows starts">
+      <ComponentRef Id="AutoStartComponent" />
+    </Feature>
+
+    <!-- UI: Use WixUI_FeatureTree for custom feature selection -->
+    <UIRef Id="WixUI_FeatureTree" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+
+    <!-- License agreement -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+  </Product>
+</Wix>

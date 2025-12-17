@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # Gõ Nhanh CLI
 # Usage: gn [command]
 
@@ -53,7 +53,7 @@ case "$1" in
         ;;
     update)
         echo -e "${B}[*]${N} Đang cập nhật..."
-        curl -fsSL https://raw.githubusercontent.com/khaphanspace/gonhanh.org/main/scripts/install-linux.sh | bash
+        curl -fsSL https://raw.githubusercontent.com/nguyennhuanhle/gonhanh.org/main/scripts/install-linux.sh | bash
         ;;
     uninstall)
         echo -e "${Y}[!]${N} Gỡ cài đặt Gõ Nhanh..."

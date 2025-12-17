@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace GoNhanh.Core;
 
@@ -30,8 +30,8 @@ public static class AppMetadata
 
     // Links
     public static readonly string Website = "https://gonhanh.org";
-    public static readonly string Repository = "https://github.com/khaphanspace/gonhanh.org";
-    public static readonly string IssuesUrl = "https://github.com/khaphanspace/gonhanh.org/issues";
+    public static readonly string Repository = "https://github.com/nguyennhuanhle/gonhanh.org";
+    public static readonly string IssuesUrl = "https://github.com/nguyennhuanhle/gonhanh.org/issues";
 
     // Legal
     public static readonly string Copyright = $"Copyright (c) 2025 {Author}. All rights reserved.";

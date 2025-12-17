@@ -1,9 +1,9 @@
-# Gõ Nhanh trên Linux
+﻿# Gõ Nhanh trên Linux
 
 ## Cài đặt
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/khaphanspace/gonhanh.org/main/scripts/install-linux.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nguyennhuanhle/gonhanh.org/main/scripts/install-linux.sh | bash
 ```
 
 Đăng xuất và đăng nhập lại để hoàn tất.
