@@ -421,5 +421,147 @@ fn pattern8_w_as_final() {
         ("law ", "law "),
         ("saw ", "saw "),
         ("jaw ", "jaw "),
+        ("draw ", "draw "),
+        ("straw ", "straw "),
+    ]);
+}
+
+// =============================================================================
+// VIETNAMESE WORDS WITH TH INITIAL - MUST NOT RESTORE
+// "th" is one of the most common Vietnamese initials
+// =============================================================================
+
+#[test]
+fn vietnamese_th_initial_preserved() {
+    telex(&[
+        ("thees ", "thế "),   // thế (so/thus) - common Vietnamese
+        ("these ", "thế "),   // same as above, different typing order
+        ("ther ", "thẻ "),    // thẻ (card)
+        ("thes ", "thé "),    // thé (not common but valid)
+        ("thef ", "thè "),    // thè (stick out tongue)
+        ("thej ", "thẹ "),    // thẹ (shy)
+        ("thax ", "thã "),    // valid structure
+        ("thar ", "thả "),    // thả (release)
+        ("thas ", "thá "),    // valid structure
+        ("thaf ", "thà "),    // thà (rather)
+        ("thaj ", "thạ "),    // valid structure
+        ("thor ", "thỏ "),    // thỏ (rabbit)
+        ("thos ", "thó "),    // valid structure
+        ("thof ", "thò "),    // thò (peek out)
+        ("thoj ", "thọ "),    // thọ (longevity)
+        ("thux ", "thũ "),    // valid structure
+        ("thur ", "thủ "),    // thủ (leader/chief)
+        ("thus ", "thú "),    // thú (animal/fun)
+        ("thuf ", "thù "),    // thù (hatred)
+        ("thuj ", "thụ "),    // thụ (passive)
+    ]);
+}
+
+// =============================================================================
+// MORE VIETNAMESE COMMON WORDS - MUST NOT RESTORE
+// =============================================================================
+
+#[test]
+fn vietnamese_common_words_preserved() {
+    telex(&[
+        // Common words with tone modifiers
+        ("cos ", "có "),      // có (have)
+        ("cof ", "cò "),      // cò (stork)
+        ("cor ", "cỏ "),      // cỏ (grass)
+        ("cox ", "cõ "),      // valid structure
+        ("coj ", "cọ "),      // cọ (palm tree)
+        ("mos ", "mó "),      // mó (touch)
+        ("mof ", "mò "),      // mò (grope)
+        ("mor ", "mỏ "),      // mỏ (beak)
+        ("mox ", "mõ "),      // mõ (wooden bell)
+        ("moj ", "mọ "),      // mọ (all - dialect)
+        ("tos ", "tó "),      // valid structure
+        ("tof ", "tò "),      // tò (curious)
+        ("tor ", "tỏ "),      // tỏ (garlic)
+        ("tox ", "tõ "),      // valid structure
+        ("toj ", "tọ "),      // valid structure
+        ("nos ", "nó "),      // nó (it/he/she)
+        ("nof ", "nò "),      // valid structure
+        ("nor ", "nỏ "),      // valid structure
+        ("nox ", "nõ "),      // valid structure
+        ("noj ", "nọ "),      // nọ (that - dialect)
+        // Words with đ
+        ("ddos ", "đó "),     // đó (there)
+        ("ddof ", "đò "),     // đò (boat)
+        ("ddor ", "đỏ "),     // đỏ (red)
+        ("ddox ", "đõ "),     // valid structure
+        ("ddoj ", "đọ "),     // đọ (compare)
+        // Words ending in consonants
+        ("cons ", "cón "),    // valid structure
+        ("conf ", "còn "),    // còn (still/remain)
+        ("conr ", "cỏn "),    // valid structure
+        ("conx ", "cõn "),    // valid structure
+        ("conj ", "cọn "),    // valid structure
+    ]);
+}
+
+// =============================================================================
+// EXPANDED ENGLISH RESTORE TESTS - COMMON PROGRAMMING TERMS
+// =============================================================================
+
+#[test]
+fn tech_english_words_restore() {
+    telex(&[
+        // Database terms
+        ("store ", "store "),
+        ("score ", "score "),
+        // Web terms
+        ("core ", "core "),
+        ("more ", "more "),
+        // Programming - consonant + o/a + modifier + e patterns
+        ("code ", "code "),
+        ("node ", "node "),
+        ("mode ", "mode "),
+        ("base ", "base "),
+        ("case ", "case "),
+        ("name ", "name "),
+        ("make ", "make "),
+        ("take ", "take "),
+        ("fake ", "fake "),
+        ("safe ", "safe "),
+        ("save ", "save "),
+        ("have ", "have "),
+        ("wave ", "wave "),
+        ("move ", "move "),
+        ("love ", "love "),
+        ("live ", "live "),
+        ("give ", "give "),
+        ("five ", "five "),
+        ("drive ", "drive "),
+        // W initial words → always restore
+        ("where ", "where "),
+        ("were ", "were "),
+        // Different vowel patterns
+        ("share ", "share "),
+        ("spare ", "spare "),
+        ("stare ", "stare "),
+        ("aware ", "aware "),
+        ("before ", "before "),
+        ("explore ", "explore "),
+        ("ignore ", "ignore "),
+        ("restore ", "restore "),
+    ]);
+}
+
+// =============================================================================
+// SAME-VOWEL PATTERN: Vowel + modifier + SAME vowel
+// These produce valid Vietnamese-like structures and should NOT restore
+// Users should use ESC or raw mode for these specific English words
+// =============================================================================
+
+#[test]
+fn same_vowel_pattern_vietnamese() {
+    // Same vowel before/after modifier → Vietnamese pattern
+    // e + modifier + e, a + modifier + a, o + modifier + o
+    telex(&[
+        ("these ", "thế "),   // th + e + s + e → thế (Vietnamese word)
+        ("there ", "thể "),   // th + e + r + e → thể (Vietnamese word)
+        ("here ", "hể "),     // h + e + r + e → hể (valid structure)
+        ("mere ", "mể "),     // m + e + r + e → mể (valid structure)
     ]);
 }

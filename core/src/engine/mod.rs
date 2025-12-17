@@ -1135,12 +1135,20 @@ impl Engine {
                     }
 
                     // Pattern 4: vowel + modifier + DIFFERENT vowel → English
-                    // EXCEPT for Vietnamese patterns: u+a (ưa), u+o (ươ)
+                    // EXCEPT for Vietnamese patterns:
+                    // - Same vowel: e+s+e in "these" → "thế" (Vietnamese)
+                    // - u+a (ưa), u+o (ươ) patterns
                     // Example: "core" = c + o + r + e → o+r+e is NOT Vietnamese pattern
                     // Example: "cura" = c + u + r + a → u+r+a IS Vietnamese (cửa)
+                    // Example: "these" = th + e + s + e → e+s+e same vowel, Vietnamese "thế"
                     if has_initial_consonant {
                         let (prev_vowel, _) = self.raw_input[i - 1];
-                        // Vietnamese exception: U + modifier + A/O → valid (ưa, ươ patterns)
+                        // Vietnamese exception 1: Same vowel before and after modifier
+                        // "these" → e+s+e, "thaar" → a+a+r, etc.
+                        if prev_vowel == next_key {
+                            continue; // Not English, check next modifier
+                        }
+                        // Vietnamese exception 2: U + modifier + A/O → valid (ưa, ươ patterns)
                         let is_vietnamese_ua =
                             prev_vowel == keys::U && (next_key == keys::A || next_key == keys::O);
                         if !is_vietnamese_ua {
