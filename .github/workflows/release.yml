@@ -219,14 +219,24 @@ jobs:
 
       - name: Install WiX Toolset
         run: |
-          choco install wixtoolset -y
-          # Add WiX to PATH for current session
-          $env:WIX = "C:\Program Files (x86)\WiX Toolset v3.11\"
-          echo "WIX=$env:WIX" >> $env:GITHUB_ENV
+          choco install wixtoolset -y --version=3.11.2
+          # Find WiX installation directory
+          $WixPath = Get-ChildItem "C:\Program Files (x86)" -Filter "WiX Toolset*" -Directory | Select-Object -First 1
+          if ($WixPath) {
+            $env:WIX = $WixPath.FullName + "\"
+            echo "WIX=$env:WIX" >> $env:GITHUB_ENV
+            echo "Found WiX at: $env:WIX"
+          } else {
+            echo "ERROR: WiX installation directory not found"
+            exit 1
+          }
 
       - name: Build MSI Installer
+        env:
+          WIX: ${{ env.WIX }}
         run: |
           $V = "${{ github.ref_name }}".TrimStart('v')
+          echo "WIX environment variable: $env:WIX"
           powershell -ExecutionPolicy Bypass -File scripts/build-windows-msi.ps1 -Version $V -Configuration Release
 
       - name: Upload Windows artifact
