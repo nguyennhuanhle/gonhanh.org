@@ -89,6 +89,7 @@ pub struct Engine {
     buf: Buffer,
     method: u8,
     enabled: bool,
+    modern: bool,
     last_transform: Option<Transform>,
     shortcuts: ShortcutTable,
     /// Raw keystroke history for ESC restore (key, caps)
@@ -109,6 +110,7 @@ impl Engine {
             buf: Buffer::new(),
             method: 0,
             enabled: true,
+            modern: true,
             last_transform: None,
             shortcuts: ShortcutTable::with_defaults(),
             raw_input: Vec::with_capacity(64),
@@ -125,6 +127,10 @@ impl Engine {
         if !enabled {
             self.buf.clear();
         }
+    }
+
+    pub fn set_modern(&mut self, modern: bool) {
+        self.modern = modern;
     }
 
     pub fn shortcuts(&self) -> &ShortcutTable {

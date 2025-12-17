@@ -34,6 +34,14 @@
     </ContentWithTargetPath>
   </ItemGroup>
 
+  <!-- Auto-build Rust DLL if missing -->
+  <Target Name="BuildRustCoreIfMissing" BeforeTargets="PreBuildEvent">
+    <Message Text="Checking for Rust DLL..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)../../../scripts/build-core-windows.ps1&quot;"
+          WorkingDirectory="$(ProjectDir)../../.."
+          Condition="!Exists('$(ProjectDir)Native\gonhanh_core.dll')" />
+  </Target>
+
   <!-- Resources -->
   <ItemGroup>
     <Resource Include="Resources\Icons\*.ico" />
