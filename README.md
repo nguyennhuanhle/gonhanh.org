@@ -10,12 +10,13 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-macOS-000000?logo=apple&logoColor=white" />
   <img src="https://img.shields.io/badge/Platform-Linux-FCC624?logo=linux&logoColor=black" />
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white" />
   <img src="https://img.shields.io/badge/License-BSD--3--Clause-blue.svg" alt="License: BSD-3-Clause">
   <img src="https://github.com/khaphanspace/gonhanh.org/actions/workflows/ci.yml/badge.svg" alt="CI">
 </p>
 
 <p align="center">
-  <strong>Bộ gõ tiếng Việt miễn phí, nhanh, ổn định cho macOS.</strong><br>
+  <strong>Bộ gõ tiếng Việt miễn phí, nhanh, ổn định cho macOS, Linux, Windows.</strong><br>
   Cài là dùng. Không quảng cáo. Không thu thập dữ liệu.
 </p>
 
@@ -30,8 +31,8 @@
 | Nền tảng | Trạng thái | Tải xuống | Hướng dẫn |
 |:--------:|:----------:|:---------:|:----------|
 | **macOS** | ✅ Sẵn sàng | [📥 Tải GoNhanh.dmg](https://github.com/khaphanspace/gonhanh.org/releases/latest/download/GoNhanh.dmg) | [Xem hướng dẫn](docs/install-macos.md) |
-| **Linux** | 🧪 Beta | — | [Xem hướng dẫn](docs/install-linux.md) |
-| **Windows** | 🧪 Beta | — | [Xem hướng dẫn](docs/install-windows.md) |
+| **Linux** | ✅ Sẵn sàng | [📥 Tải gonhanh-linux.tar.gz](https://github.com/khaphanspace/gonhanh.org/releases/latest) | [Xem hướng dẫn](docs/install-linux.md) |
+| **Windows** | ✅ Sẵn sàng | [📥 Tải GoNhanh.zip](https://github.com/khaphanspace/gonhanh.org/releases/latest) | [Xem hướng dẫn](docs/install-windows.md) |
 
 ## ✨ Tính năng
 
@@ -51,7 +52,7 @@
 - ✂️ **Gõ tắt** — `vn` → `Việt Nam`, `ko` → `không`
 - 🔌 **Mọi app** — VS Code, Zed, Chrome, Notion, Terminal, Ghostty...
 - 🌗 **Dark/Light** — Theo hệ thống
-- 💻 **Đa nền tảng** — macOS, Linux, Windows (beta)
+- 💻 **Đa nền tảng** — macOS, Linux, Windows
 
 ### 🛡️ Cam kết "Ba Không"
 
