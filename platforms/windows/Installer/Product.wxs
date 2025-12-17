@@ -24,7 +24,6 @@
 
     <!-- Upgrade logic: Remove old version before installing new -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."
-                  AllowSameVersionUpgrades="yes"
                   Schedule="afterInstallInitialize" />
 
     <!-- Single CAB file embedded in MSI -->

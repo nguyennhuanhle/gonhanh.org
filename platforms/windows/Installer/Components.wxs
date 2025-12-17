@@ -6,16 +6,20 @@
       <Component Id="MainExecutableComponent" Guid="AA36B1C4-6BFF-43C4-BFD6-7992931FE702">
         <File Id="MainExecutable"
               Name="GoNhanh.exe"
-              Source="$(var.PublishDir)\GoNhanh.exe"
-              KeyPath="yes" />
+              Source="$(var.PublishDir)\GoNhanh.exe" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\GoNhanh\Components"
+                       Name="MainExe" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFile Id="RemoveMainExe" Name="GoNhanh.exe" On="uninstall" />
       </Component>
 
       <!-- Rust Core DLL -->
       <Component Id="RustCoreComponent" Guid="8E4D8D37-1ABA-4BA4-8B4F-7793D375208A">
         <File Id="RustCoreDll"
               Name="gonhanh_core.dll"
-              Source="$(var.PublishDir)\gonhanh_core.dll"
-              KeyPath="yes" />
+              Source="$(var.PublishDir)\gonhanh_core.dll" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\GoNhanh\Components"
+                       Name="RustCore" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFile Id="RemoveRustDll" Name="gonhanh_core.dll" On="uninstall" />
       </Component>
 
       <!-- Registry Settings -->
@@ -28,6 +32,14 @@
           <RegistryValue Type="integer" Name="Enabled" Value="1" />
           <RegistryValue Type="integer" Name="FirstRun" Value="1" />
         </RegistryKey>
+      </Component>
+
+      <!-- Directory Cleanup -->
+      <Component Id="InstallFolderRemoval" Guid="A1B2C3D4-E5F6-7890-ABCD-123456789ABC">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\GoNhanh\Components"
+                       Name="InstallFolder" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFile Id="RemoveAllFiles" Name="*.*" On="uninstall" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
       </Component>
     </ComponentGroup>
 
